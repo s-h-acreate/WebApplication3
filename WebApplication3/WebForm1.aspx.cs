@@ -61,7 +61,10 @@ namespace WebApplication2
         {
             string searchProduct = (txtSearch.Text).ToUpper();
             string storeNumber = "BUF039";
-            string data = GetpdfText(searchProduct, storeNumber);
+            List<string> list1 = GetpdfText(searchProduct, storeNumber);
+            string data = list1[0];
+            string rackno = list1[1];
+            string fileName = GetFileName(storeNumber);
             if (String.IsNullOrEmpty(data)==true)
             {
                 using (SqlConnection con = new SqlConnection())
@@ -85,17 +88,16 @@ namespace WebApplication2
             }
             else
             {
-                highlight(data);
-                showMessage.Text = "Can find your Product in below ";
+                highlight(data,rackno,fileName);
+                showMessage.Text = "Can find your Product in this given Rack no and you can check its category where you can find in the store. ";
                 showMessage.Visible = true;
             }
             
         }
-        private string GetpdfText(string productName, string storeNo)
+        private List<string> GetpdfText(string productName, string storeNo)
         {
             using (SqlConnection con = new SqlConnection())
-            {
-                string subCategory = string.Empty;
+            {               
                 con.ConnectionString = ConfigurationManager.ConnectionStrings["RMConnectionString"].ConnectionString;
                 using (SqlCommand com = new SqlCommand("spGetsubcategory", con))
                 {
@@ -111,35 +113,76 @@ namespace WebApplication2
                         while (sdr.Read())
                         {
                             lstSubCategory.Add(sdr["Subcategory"].ToString());
+                            lstSubCategory.Add(sdr["Desc1"].ToString());
+                           
                         }
                     }
                     con.Close();
                     
-                    if (lstSubCategory != null && lstSubCategory.Count > 0)
+                    //if (lstSubCategory != null && lstSubCategory.Count > 0)
+                    //{
+                    //    subCategory = lstSubCategory[0];
+                    //}
+                    return lstSubCategory;
+                }
+            }
+        }
+        private string GetFileName(string storeNo)
+        {
+            string fileName = "";
+            using (SqlConnection con = new SqlConnection())
+            {
+                con.ConnectionString = ConfigurationManager.ConnectionStrings["RMConnectionString"].ConnectionString;
+                using (SqlCommand com = new SqlCommand("spGetfilenamepdf", con))
+                {
+                    com.CommandType = CommandType.StoredProcedure;
+                    com.Parameters.AddWithValue("@storenumber", storeNo);
+                    com.Connection = con;
+                    con.Open();
+                    List<string> data = new List<string>();
+                    using (SqlDataReader sdr = com.ExecuteReader())
                     {
-                        subCategory = lstSubCategory[0];
+                        while (sdr.Read())
+                        {
+                            data.Add(sdr["Filename"].ToString());
+                        }
                     }
-                    return subCategory;
+                    con.Close();
+
+                    if (data != null && data.Count > 0)
+                    {
+                        fileName = data[0];
+                    }
+                    return fileName;
                 }
             }
         }
 
-        private void highlight(string productName)
+        private void highlight(string productName,string rackNumber,string fName)
         {
             double txtX = 0;
             double txtY = 0;
+            string path= @"C:\GPC Test data\" + fName + ".pdf";
 
-            using (Document doc = new Document(@"C:\Users\PCTR0042045\source\repos\WebApplication3\WebApplication3\data\FP_6258 (1).pdf"))
+            using (Document doc = new Document(path))
             {
                 // Search target text to highlight
-                TextFragmentAbsorber textFragmentAbsorber = new TextFragmentAbsorber(productName);
+               
                 Document newDocument = new Document();
                 Page page = doc.Pages[1];
-                page.Accept(textFragmentAbsorber);
-
-                // Create a highlight annotation
-                if (textFragmentAbsorber.TextFragments.Count > 0)
+                TextFragmentAbsorber tfa = new TextFragmentAbsorber(productName);
+                page.Accept(tfa);
+                TextFragmentAbsorber textFragmentAbsorber;
+                if (tfa.TextFragments.Count > 0)
                 {
+                    textFragmentAbsorber = new TextFragmentAbsorber(productName);
+                }
+                else
+                {
+                    textFragmentAbsorber = new TextFragmentAbsorber(rackNumber);
+                }
+                // Create a highlight annotation
+                page.Accept(textFragmentAbsorber);
                     HighlightAnnotation ha = new HighlightAnnotation(page, textFragmentAbsorber.TextFragments[1].Rectangle);
                     TextFragmentCollection textFragmentCollection = textFragmentAbsorber.TextFragments;
 
@@ -177,7 +220,7 @@ namespace WebApplication2
                     newDocument.Pages.Add(page);
                     // Save the document
                     newDocument.Save(@"C:\Users\PCTR0042045\source\repos\WebApplication3\WebApplication3\data\highlight1.pdf");
-                }
+                
             }
 
         }

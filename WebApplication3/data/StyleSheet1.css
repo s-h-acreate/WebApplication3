@@ -11,7 +11,7 @@ body {
 }
 
 .height {
-    height: 100vh;
+    height: 20vh;
 }
 
 
@@ -56,3 +56,10 @@ body {
 
 
     }
+.center {
+    margin: 25px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+   border:2px solid black;
+}

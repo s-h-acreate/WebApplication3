@@ -34,8 +34,8 @@
                 </asp:AutoCompleteExtender> 
          <asp:Button ID="Button1" CssClass="btn " runat="server" OnClick="Button1_Click" Text="Search" />
                         </div>
-                     <div class="newlabel">
-                <asp:Label ID="showMessage" runat="server"  Visible="false"></asp:Label>
+                     <div class="center" style="margin-top:100px">
+                <asp:Label ID="showMessage"  runat="server" Visible="false"></asp:Label>
             </div>
                     </div>
                 </div>
